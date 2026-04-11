@@ -1,0 +1,38 @@
+name: Create Release v0.15.6
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/create-release.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.15.6
+          name: "v0.15.6: Dashboard logging, custom domains, pending actions, topology, terminal APIs"
+          body: |
+            ## What's Changed
+
+            - Enhanced log API with date/time range filtering, log level filtering, service/component filtering, and color-coded output
+            - Added custom domains management API with CRUD operations, DNS instruction generation, and DNS verification
+            - Added pending actions API with 5-second countdown undo mechanism for destructive operations
+            - Added service topology API returning network graph with internet gateway, port directions, and service connections
+            - Added terminal exec API with safe command execution, proper TTY environment, and command whitelist
+            - Delete service now requires typed confirmation name to prevent accidental deletion
+
+      - name: Clean up this workflow file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/create-release.yml
+          git commit -m "chore: remove one-shot release workflow"
+          git push

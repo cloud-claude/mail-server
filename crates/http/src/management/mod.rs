@@ -5,11 +5,9 @@
  */
 
 pub mod crypto;
-pub mod custom_domains;
 pub mod dkim;
 pub mod dns;
 pub mod log;
-pub mod pending_actions;
 pub mod principal;
 pub mod queue;
 pub mod reload;
@@ -17,8 +15,6 @@ pub mod report;
 pub mod settings;
 pub mod spam;
 pub mod stores;
-pub mod terminal;
-pub mod topology;
 pub mod troubleshoot;
 
 // SPDX-SnippetBegin
@@ -34,7 +30,6 @@ use enterprise::telemetry::TelemetryApi;
 use crate::auth::oauth::auth::OAuthApiHandler;
 use common::{Server, auth::AccessToken};
 use crypto::CryptoHandler;
-use custom_domains::CustomDomainManagement;
 use directory::{Permission, backend::internal::manage};
 use dkim::DkimManagement;
 use dns::DnsManagement;
@@ -44,7 +39,6 @@ use jmap::api::{ToJmapHttpResponse, ToRequestError};
 use jmap_proto::error::request::RequestError;
 use log::LogManagement;
 use mail_parser::DateTime;
-use pending_actions::PendingActionManagement;
 use principal::PrincipalManager;
 use queue::QueueManagement;
 use reload::ManageReload;
@@ -56,8 +50,6 @@ use std::future::Future;
 use std::{str::FromStr, sync::Arc};
 use store::write::now;
 use stores::ManageStore;
-use terminal::TerminalApi;
-use topology::TopologyApi;
 use troubleshoot::TroubleshootApi;
 
 #[derive(Serialize)]
@@ -128,22 +120,6 @@ impl ManagementApi for Server {
             "update" => self.handle_manage_update(req, path, &access_token).await,
             "logs" if req.method() == Method::GET => {
                 self.handle_view_logs(req, &access_token).await
-            }
-            "custom-domains" => {
-                self.handle_manage_custom_domains(req, path, body, &access_token)
-                    .await
-            }
-            "actions" => {
-                self.handle_manage_pending_actions(req, path, body, &access_token)
-                    .await
-            }
-            "topology" => {
-                self.handle_topology_request(req, path, &access_token)
-                    .await
-            }
-            "terminal" => {
-                self.handle_terminal_request(req, path, body, &access_token)
-                    .await
             }
             "spam-filter" => {
                 self.handle_manage_spam(req, path, body, session, &access_token)

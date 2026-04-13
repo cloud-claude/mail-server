@@ -1,56 +1,99 @@
-# Deliverability Status & Action Plan
+# Mail Server Deliverability — Consolidated Status
 
-Last updated: during Test 7 analysis
-
-## Where we are
-
-Forwarding works end-to-end. Gmail accepts with 250 OK. Messages land in **spam** because outbound auth signals are incomplete.
+Goal: `oz@oznakash.com` forwards to Gmail Inbox (not Spam), clean auth, production-ready operations.
 
 ---
 
-## Action items — prioritized
+## ✅ Done
 
-| # | Action | Severity | Impact if skipped | Status |
-|---|--------|----------|-------------------|--------|
-| **1** | Fix signing domain: either change `report.domain` to `oznakash.com` **or** publish DKIM DNS records for `naka.sh` | 🔴 **Critical** | Every forward shows `dkim=permerror` and `arc=fail` → Gmail keeps flagging as spam | ⏳ waiting on choice |
-| **2** | Publish SPF for `cloud-claude.com` | 🟡 **High** | Null-envelope forwards (the most common case) fail SPF at `Received-SPF` check → −1 to −2 mail-tester points, harder to reach inbox | ☐ |
-| **3** | Configure ACME / valid TLS cert for all listeners | 🟡 **Medium** | Self-signed cert means IMAP/submission clients get warnings, MTA-STS strict senders may refuse delivery, mail-tester penalizes | ☐ |
-| **4** | Verify `sender_domain` actually populates on forwards so DKIM expression picks `oznakash.com` | 🟡 **Medium** | If `sender_domain` is empty on forwards, DKIM falls back to `report.domain` anyway — fixes itself after #1 | ⏳ blocked by #1 |
-| **5** | Migrate `naka.sh` off ImprovMX to Stalwart (roadmap Phase 1 requires this) | 🟢 **Low** (for now) | You don't have control or consistency across both domains; `oz@naka.sh` forwarding is handled by a third party | ☐ parked by user |
-| **6** | Add DMARC aggregate reporting destination & later tighten `p=quarantine` → `p=reject` | 🟢 **Low** | No visibility into who's forging your domain; current `p=quarantine` is fine for now | ☐ future |
-| **7** | Warm up IP reputation (send small volume consistently, mark "Not spam" in Gmail) | 🟢 **Passive** | New IPs take 2–4 weeks to build reputation; spam placement improves naturally with clean auth | ongoing |
-
----
-
-## Green (already working — don't touch)
-
-- ✅ Forward pipeline (Sieve redirect) — delivers to Gmail with 250 OK
-- ✅ MX, A records, PTR for oznakash.com
-- ✅ DKIM signatures generated for both domains in Stalwart
-- ✅ DKIM DNS records published for oznakash.com (both RSA + Ed25519)
-- ✅ SPF on oznakash.com (`-all` strict)
-- ✅ DMARC on oznakash.com (`p=quarantine`)
-- ✅ Inbound + outbound TLS 1.3 handshakes succeed
-- ✅ MTA-STS policy fetched + verified on outbound
-- ✅ Hetzner port 25 unblocked
-- ✅ DKIM Signing expression in Stalwart is dynamic (`sender_domain` based) — correct pattern
+- [x] Forwarding pipeline working (Sieve trusted script `forward-to-gmail`)
+- [x] Stalwart DKIM signatures created: RSA + Ed25519 for both oznakash.com and naka.sh
+- [x] oznakash.com DNS complete: MX, A, SPF (`-all`), DKIM (both selectors), DMARC (`p=quarantine`)
+- [x] Hetzner port 25 unblocked (outbound SMTP works)
+- [x] DKIM Signing expression in Stalwart is dynamic (`is_local_domain` pattern) — Google Workspace-style
+- [x] `report.domain` changed from `naka.sh` → `oznakash.com` (Test 8: `dkim=pass header.d=oznakash.com` 🎉)
+- [x] DMARC passes for forwarded mail
+- [x] Google Postmaster Tools DNS verification record added (pending Google side)
+- [x] URL map of Stalwart admin pages saved at `STALWART-ADMIN-URLS.md`
 
 ---
 
-## Parked / non-goals (documented for later)
+## 🔴 Critical — blocking Inbox placement
 
-- naka.sh migration from ImprovMX to Stalwart
-- Snappymail webmail integration (ROADMAP Phase 2)
-- ARC expression going dynamic (operator-domain pattern is industry-standard; OK to leave static)
-- DMARC `p=reject` hardening (do after weeks of monitoring with `p=quarantine`)
+| # | Action | Status | Next step |
+|---|--------|--------|-----------|
+| A | **Confirm Test 8 landed in Inbox vs. Spam** | ⏳ pending | User checks Gmail and reports |
+| B | **Fix HELO SPF: change hostname to `mail.oznakash.com`** (Option B over SPF for cloud-claude.com) | ☐ | 1. Add A record `mail.oznakash.com → 5.78.187.44` at GoDaddy<br>2. Change Stalwart hostname at `/settings/network/edit`<br>3. Update Hetzner PTR to `mail.oznakash.com`<br>4. Save & Reload |
+| C | **ARC seal not firing from mail.cloud-claude.com** | ☐ | Go to `/settings/arc/edit`, click Save & Reload explicitly. If still no ARC-Seal in test headers, investigate whether signatures need type=ARC flag |
 
 ---
 
-## Decision pending
+## 🟡 High — strong deliverability/security gains
 
-**User needs to choose on Action 1:**
+| # | Action | Status | Notes |
+|---|--------|--------|-------|
+| D | **TLS certificate via ACME (Let's Encrypt)** | ☐ | `/settings/acme`. Needs port 80 reachable. After hostname change to mail.oznakash.com, include it in ACME domains list |
+| E | **RFC 2142 aliases**: `postmaster@`, `abuse@`, `hostmaster@` → forward to oz@oznakash.com | ☐ | Many receivers expect these; bounces/abuse reports go here |
+| F | **Verify DMARC `rua=postmaster@oznakash.com` mailbox actually receives** | ☐ | Tied to E above |
+| G | **Admin panel IP whitelist** (`/settings/allowed-ip`) | ☐ | Currently publicly reachable — credential-stuffing risk |
+| H | **Auto-ban on failed auth** (`/settings/auto-ban/edit`) | ☐ | Blocks brute-force after N failures |
+| I | **Backup strategy** for Stalwart RocksDB + configs | ☐ | Daily rsync or snapshot — catastrophic loss risk otherwise |
 
-| Option | Change | DNS work | Stalwart config change |
-|--------|--------|----------|------------------------|
-| **A. Keep naka.sh as operator** | Publish DKIM TXT for naka.sh at GoDaddy | 2 TXT records | none |
-| **B. Switch operator to oznakash.com** | Change `report.domain` → `oznakash.com` | none | 1 field |
+---
+
+## 🟢 Medium — nice hygiene
+
+| # | Action | Status | Notes |
+|---|--------|--------|-------|
+| J | **Fix Ed25519 DKIM "no key"** — drop `h=sha256` tag from DNS record | ☐ | Currently `v=DKIM1; k=ed25519; h=sha256; p=...` — try without `h=sha256`. RSA already passes so not blocking |
+| K | **MTA-STS policy publication** for oznakash.com | ☐ | Pairs with TLS-RPT. Signals legit operator status |
+| L | **TLS-RPT record** | ☐ | TXT at `_smtp._tls.oznakash.com` — gets reports of TLS failures |
+| M | **Enable Stalwart metrics** (`/settings/metrics/edit`) | ☐ | Visibility into queue, auth failures, delivery rate |
+| N | **Rate-limit inbound SMTP** (`/settings/smtp-in-throttle`) | ☐ | Usually defaults are fine — just verify |
+| O | **Disable unused listeners** (POP3/JMAP if unused) | ☐ | Reduce attack surface |
+
+---
+
+## 🟢 Low / Future
+
+| # | Action | Status | Notes |
+|---|--------|--------|-------|
+| P | **Migrate naka.sh from ImprovMX to Stalwart** | 🅿️ parked | User explicitly paused until oznakash.com is fully stable |
+| Q | **Tighten DMARC `p=quarantine` → `p=reject`** | ☐ | After 1-2 weeks of clean aggregate reports |
+| R | **DMARC report parser** (Dmarcian, Postmark, or similar) | ☐ | Makes rua= XML reports readable |
+| S | **DKIM key rotation plan** (annual) | ☐ | Add new selector, dual-sign for 30 days, retire old |
+| T | **DANE/TLSA records** | ☐ | Advanced; only if you care about nation-state MITM |
+| U | **Reputation warm-up** (mark "Not spam" in Gmail, send steady low volume) | 🔄 passive | Takes 2-4 weeks on new IPs |
+
+---
+
+## Parked / non-goals
+
+- Snappymail webmail integration (ROADMAP Phase 2 — deferred)
+- BIMI logo display (requires $1,500/yr VMC — overkill)
+- ARC expression going dynamic (industry standard is static operator domain; keep as-is)
+
+---
+
+## Recommended execution order
+
+**Today / this session:**
+1. Confirm Test 8 result (A)
+2. Fix HELO via hostname change (B) — combines SPF pass + cleaner identity + sets up ACME later
+3. ARC seal firing (C) — click Save & Reload explicitly
+4. TLS cert via ACME (D) — after B so cert includes the right hostname
+5. Postmaster aliases (E) + DMARC rua verify (F)
+6. Admin IP whitelist (G) + auto-ban (H)
+
+**This week:**
+- Backup strategy (I)
+- MTA-STS + TLS-RPT (K, L)
+- Fix Ed25519 (J)
+
+**Next 1-2 weeks:**
+- Monitor DMARC reports
+- Tighten to `p=reject` (Q)
+
+**Later:**
+- naka.sh migration (P) when ready
+- Everything else

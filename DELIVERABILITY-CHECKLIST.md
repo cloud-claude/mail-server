@@ -14,6 +14,7 @@ Domains: `oznakash.com`, `naka.sh`, `cloud-claude.com`
 | 3 | Publish SPF TXT records for `oznakash.com`, `naka.sh`, `cloud-claude.com` | ☐ |
 | 4 | Publish DMARC TXT records for `oznakash.com`, `naka.sh` | ☐ |
 | 5 | Fix `No TLS certificates available` warning (ACME for all listeners) | ☐ |
+| 6 | Configure DKIM signing rules so forwards for `oznakash.com` sign as `oznakash.com` (not `naka.sh`) | ☐ |
 
 ## Verification targets
 

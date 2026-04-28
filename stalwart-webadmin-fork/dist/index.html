@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+<script type="module">
+import init, * as bindings from '/webadmin-a1b2886983367bac.js';
+const wasm = await init({ module_or_path: '/webadmin-a1b2886983367bac_bg.wasm' });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script>
+
+    <!-- Favicon for browsers -->
+    <link rel="icon" href="/favicon-cfb706b7132e0fd2.ico" integrity="sha384-xmpdB90Iw1Taa29SfEFXiENgXOQzom6C8WYjcD5Io0p1fjdJLDBvrKufcmrTHn6a"/>
+    <!-- Favicon sizes for different platforms -->
+    <link rel="icon" href="/favicon-32x32-33abe4bf0e53934c.png" integrity="sha384-0Zy966gMg2P2uZhUAv8IdixXEIejROvJyU28/fbsDk/3geMKyy84V0zSrHs2pN+H"/>
+    <link rel="icon" href="/favicon-16x16-9b86a4caa1876c9e.png" integrity="sha384-tcxBHHSsaX/Eoz4RXA2QT2xrQs0C8NkBPHteE4oJj5mjk0QynFC+DYqsBi2wtyXo"/>
+    <!-- For Android Chrome -->
+    <link rel="icon" href="/android-chrome-192x192-6aba841e8fc78b83.png" integrity="sha384-4QwNjlH6Pqx4aeNBCrZSgZgw2iq2oC7Yw29X95nrPr1tKh0FB71rvVFHkQ0BdSS1"/>
+    <link rel="icon" href="/android-chrome-512x512-ffbecec3ff69a6ca.png" integrity="sha384-DnOdHkyuvKhNBFP+npy4csavvis2HpbVHvlT9xPGTTxJL74eQzIap+gEIDaQw+DE"/>
+    <!-- For iOS devices -->
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <!-- Manifest -->
+    
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="/output-d63394d2e957a866.css" integrity="sha384-WT8+VvLgCDMVG2+GlbcOQQdxpa3MkTWhfRrQvfBJnaFcfu8BG3/dknbe/jS0D7nx"/>
+    
+
+    <title>Stalwart Management</title>
+<link rel="modulepreload" href="/webadmin-a1b2886983367bac.js" crossorigin="anonymous" integrity="sha384-uNcQYtCpuj0rLTnr1VwaGyOUuiTN2Tmsh9Zonin0YgbyBE7GrqEFiSdk1NrATb+G"><link rel="preload" href="/webadmin-a1b2886983367bac_bg.wasm" crossorigin="anonymous" integrity="sha384-wQ7/Vh13uB/nTZje8zeYmpVLdf8lJMdX1BKpMYTKxGdmkjZgE9Gz3VvS1wpDjQdn" as="fetch" type="application/wasm"></head>
+
+<body>
+</body>
+
+</html>
